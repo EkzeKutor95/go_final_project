@@ -10,19 +10,20 @@ import (
 
 func main() {
 
-	// подключаем БД
+	//Инициализация БД
 	if err := db.Init("pkg/db/scheduler.db"); err != nil {
 		fmt.Println("Ошибка в подключении БД")
 		return
 	}
 
-	//Вычисляем следующую дату повторения
+	//Регистрация Эндпоинтов
 	api.Init()
 
-	//Запускаем веб-сервер
+	//Настройка Статики
 	fs := http.FileServer(http.Dir("./web"))
 	http.Handle("/", fs)
 
+	//Запуск сервера
 	log.Println("Сервер запущен на :7540")
 	log.Fatal(http.ListenAndServe(":7540", nil))
 
