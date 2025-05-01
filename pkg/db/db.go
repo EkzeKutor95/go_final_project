@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS scheduler (
 CREATE INDEX IF NOT EXISTS scheduler_date ON scheduler(date);
 `
 
-// инициализация БД
+// Init инициализация БД
 func Init(dbFile string) error {
 
 	//Проверка наличия файла
@@ -35,30 +35,35 @@ func Init(dbFile string) error {
 	//Соединение с БД
 	db, err = sql.Open("sqlite", dbFile)
 	if err != nil {
-		return fmt.Errorf("Ошибка в открытии SQL %v", err)
+		return fmt.Errorf("error opening sql %v", err)
 	}
 
 	//Создаем таблицу если ее не существует
 	_, err = db.Exec(schema)
 	if err != nil {
-		return fmt.Errorf("Ошибка в выполнении SQL-Запроса %v", err)
+		return fmt.Errorf("error executing SQL query %v", err)
 	}
 
 	//Сообщение о создании таблицы
 	if install {
-		fmt.Println("Создана новая база данных:", dbFile)
+		fmt.Println("A new database has been created:", dbFile)
 	}
 
 	//Удаляем из таблицы задачи без даты
 	_, err = db.Exec(`DELETE FROM scheduler WHERE date = ''`)
 	if err != nil {
-		return fmt.Errorf("ошибка очистки базы: %v", err)
+		return fmt.Errorf("database cleanup error: %v", err)
 	}
 
 	return nil
 }
 
-// Доступ для других пакетов
+// GetDB Доступ для других пакетов
 func GetDB() *sql.DB {
 	return db
+}
+
+// Close Для закрытия соединения
+func Close() error {
+	return db.Close()
 }

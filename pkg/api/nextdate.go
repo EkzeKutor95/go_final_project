@@ -8,28 +8,25 @@ import (
 	"time"
 )
 
-// Константа для парсинга
-const dateFormat = "20060102"
-
 func NextDate(now time.Time, dstartStr string, repeat string) (string, error) {
 
 	var date time.Time
 
 	//Нет повторения - ошибка
 	if strings.TrimSpace(repeat) == "" {
-		return "", errors.New("Нет повторения")
+		return "", errors.New("there is no repetition rule")
 	}
 
 	//Парсим
-	dstart, err := time.Parse(dateFormat, dstartStr)
+	dstart, err := time.Parse(Layout, dstartStr)
 	if err != nil {
-		return "", errors.New("Неверная дата")
+		return "", errors.New("incorrect start date")
 	}
 
 	//Правило повторения по частям
 	parts := strings.Fields(repeat)
 	if len(parts) == 0 {
-		return "", errors.New("Неверный формат повторения")
+		return "", errors.New("incorrect repetition rule")
 	}
 
 	ruleType := parts[0]
@@ -38,37 +35,37 @@ func NextDate(now time.Time, dstartStr string, repeat string) (string, error) {
 	switch ruleType {
 	case "d":
 		if len(parts) != 2 {
-			return "", errors.New("Мало параметров для d")
+			return "", errors.New("few parameters for d")
 		}
 		interval, err := strconv.Atoi(parts[1])
 		if err != nil {
-			return "", errors.New("Неправильный формат: " + parts[1])
+			return "", errors.New("wrong format: " + parts[1])
 		}
 		if interval < 1 || interval > 400 {
-			return "", errors.New("Поддерживается только число от 1 до 400")
+			return "", errors.New("only number from 1 to 400 is supported")
 		}
 
 		date = dstart
 		for {
 			date = date.AddDate(0, 0, interval)
 			if date.After(now) {
-				return date.Format(dateFormat), nil
+				return date.Format(Layout), nil
 			}
 		}
 
 	case "y":
 		if len(parts) != 1 {
-			return "", errors.New("Неправильный формат для y")
+			return "", errors.New("few parameters for y")
 		}
 		date = dstart
 		for {
 			date = date.AddDate(1, 0, 0)
 			if date.After(now) {
-				return date.Format(dateFormat), nil
+				return date.Format(Layout), nil
 			}
 		}
 	default:
-		return "", fmt.Errorf("Правило %s не поддерживается(пока что)", ruleType)
+		return "", fmt.Errorf("rule %s is not supported (yet)", ruleType)
 	}
 
 }

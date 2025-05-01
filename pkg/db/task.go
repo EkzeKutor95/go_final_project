@@ -33,7 +33,7 @@ func Tasks(limit int) ([]*Task, error) {
 	ORDER BY date ASC
 	LIMIT ?`, limit)
 	if err != nil {
-		return nil, fmt.Errorf("Ошибка в SELECT %w", err)
+		return nil, fmt.Errorf("error while SELECT %w", err)
 	}
 	defer rows.Close()
 
@@ -41,10 +41,14 @@ func Tasks(limit int) ([]*Task, error) {
 	for rows.Next() {
 		var t Task
 		if err := rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat); err != nil {
-			return nil, fmt.Errorf("Ошибка поиска ближайщих задач: %w", err)
+			return nil, fmt.Errorf("error searching for nearby tasks: %w", err)
 		}
 		tasks = append(tasks, &t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error searching for nearby tasks: %w", err)
+	}
+
 	if tasks == nil {
 		tasks = make([]*Task, 0)
 	}
@@ -54,17 +58,17 @@ func Tasks(limit int) ([]*Task, error) {
 // функция получения задачи
 func GetTask(id string) (*Task, error) {
 	if id == "" {
-		return nil, fmt.Errorf("Ошибка сканирования задачи по ID")
+		return nil, fmt.Errorf("error scanning task by ID: %s", id)
 	}
 
 	t := &Task{}
-	query := "SELECT * FROM scheduler WHERE id=?"
+	query := "SELECT id, date, title, comment, repeat FROM scheduler WHERE id=?"
 	err := db.QueryRow(query, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("Задача не найдена")
+			return nil, fmt.Errorf("task not found: %s", id)
 		}
-		return nil, fmt.Errorf("Ошибка при возврате строк")
+		return nil, fmt.Errorf("error returning rows: %w", err)
 	}
 	return t, nil
 }
@@ -88,7 +92,7 @@ SET date=?,
 	}
 
 	if n == 0 {
-		return fmt.Errorf("Неправильный ID")
+		return fmt.Errorf("incorrect ID for task: %s", t.ID)
 	}
 	return nil
 
@@ -97,18 +101,18 @@ SET date=?,
 // функция удаления задачи
 func DeleteTask(id string) error {
 	if id == "" {
-		return fmt.Errorf("Не указан идентификатор")
+		return fmt.Errorf("ID not specified: %s", id)
 	}
 	res, err := db.Exec(`DELETE FROM scheduler WHERE id = ?`, id)
 	if err != nil {
-		return fmt.Errorf("Ошибка при удалении задачи: %w", err)
+		return fmt.Errorf("error deleting task: %w", err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("Ошибка подсчёта удалённых строк: %w", err)
+		return fmt.Errorf("error counting deleted rows: %w", err)
 	}
 	if n == 0 {
-		return fmt.Errorf("Задача не найдена")
+		return fmt.Errorf("task not found: %s", id)
 	}
 	return nil
 }
@@ -116,18 +120,18 @@ func DeleteTask(id string) error {
 // функция переноса даты
 func UpdateDate(nextDate, id string) error {
 	if id == "" {
-		return fmt.Errorf("Не указан идентификатор")
+		return fmt.Errorf("ID not specified")
 	}
 	res, err := db.Exec(`UPDATE scheduler SET date = ? WHERE id = ?`, nextDate, id)
 	if err != nil {
-		return fmt.Errorf("Ошибка при обновлении даты: %w", err)
+		return fmt.Errorf("error updating date: %w", err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("Ошибка подсчёта обновлённых строк: %w", err)
+		return fmt.Errorf("error counting updated rows: %w", err)
 	}
 	if n == 0 {
-		return fmt.Errorf("Задача не найдена")
+		return fmt.Errorf("task not found")
 	}
 	return nil
 }

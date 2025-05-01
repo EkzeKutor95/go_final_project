@@ -2,30 +2,33 @@ package api
 
 import (
 	"encoding/json"
-	"go_final_project/pkg/db"
 	"net/http"
 	"time"
+
+	"go_final_project/pkg/db"
 )
 
 type TaskResp struct {
 	Tasks []*db.Task `json:"tasks"`
 }
 
+var Limit = 100
+
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodGet {
-		writeError(w, "Метод не поддерживается")
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	tasks, err := db.Tasks(1000)
+	tasks, err := db.Tasks(Limit)
 	if err != nil {
-		writeError(w, err.Error())
+		http.Error(w, "Limit 100 entries", http.StatusInternalServerError)
 		return
 	}
 
-	today := time.Now().Format("20060102")
+	today := time.Now().Format(Layout)
 	for i := range tasks {
 		if tasks[i].Date == "" {
 			tasks[i].Date = today
@@ -38,13 +41,10 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func writeError(w http.ResponseWriter, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
-}
-
 func writeJson(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(v)
+	err := json.NewEncoder(w).Encode(v)
+	if err != nil {
+		return
+	}
 }
