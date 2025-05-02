@@ -44,5 +44,14 @@ jobs:
       - name: go vet
         run: go vet ./...
 
-      - name: Run all tests
+      - name: Set PORT environment variable
+        run: echo "PORT=7540" >> $GITHUB_ENV
+
+      - name: Start API server
+        run: |
+          go run cmd/server/main.go &
+          echo "Waiting for API server to be ready…"
+          sleep 5
+
+      - name: Run tests
         run: go test ./... -v
