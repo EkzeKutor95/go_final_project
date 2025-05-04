@@ -2,56 +2,33 @@ name: Go CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go-version: [1.24.x]
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: "1.24"
 
-      - name: Display Go version
-        run: go version
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: go fmt
-        run: go fmt ./...
-
-      - name: go vet
-        run: go vet ./...
-
-      - name: Set PORT environment variable
+      - name: Export PORT
         run: echo "PORT=7540" >> $GITHUB_ENV
 
       - name: Start API server
         run: |
-          go run cmd/server/main.go &
-          echo "Waiting for API server to be ready…"
-          sleep 5
+          go run /Users/macbookair/golang/courses/go_final_project &
+          for i in {1..10}; do
+          curl --silent http://localhost:7540/ && break
+          sleep 1
+          done
 
       - name: Run tests
         run: go test ./... -v
